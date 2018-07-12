@@ -3,32 +3,31 @@
 namespace App\Http\Controllers\Api;
 
 use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
+use App\Http\Controllers\Api\ApiController;
 use App\User;
 use Illuminate\Support\Facades\Auth;
 use Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Hash;
 
-class UserController extends Controller
+class UserController extends ApiController
 {
-    public $successStatus = 200;
-
     /**
-     * login api
+     * Gives access token
      *
      * @return \Illuminate\Http\Response
      */
     public function login()
     {
+        // Attempt to login and return access token in success
         if (Auth::attempt(['email' => request('email'), 'password' => request('password')])) {
             $user = Auth::user();
-            $success['token'] =  $user->createToken('MyApp')-> accessToken;
+            $data['token'] =  $user->createToken('MyApp')-> accessToken;
 
-            return response()->json(['success' => $success], $this-> successStatus);
+            return $this->respondWithData($data);
         }
 
-        return response()->json(['error'=>'Unauthorised'], 401);
+        return $this->respondUnauthorised();
     }
 
     /**
@@ -40,32 +39,41 @@ class UserController extends Controller
     {
         $users = User::orderBy('id', 'asc')->get();
 
-        return response()->json(['success' => $users], $this-> successStatus);
+        if (! $users) {
+            return $this->respondNotFound('No users found.');
+        }
+
+        return $this->respondWithData($users);
     }
 
     /**
      * Shows user related information
      *
+     * @param int $id user id
+     *
      * @return \Illuminate\Http\Response
      */
-    public function show($id)
+    public function show(int $id)
     {
         $user = User::find($id);
 
-        if ($user === null) {
-            return response()->json(['error' => 'Not Found'], 404);
+        if (! $user) {
+            return $this->respondNotFound('This user was not found.');
         }
 
-        return response()->json(['success' => $user], $this-> successStatus);
+        return $this->respondWithData($user);
     }
 
     /**
      * Creates new user
      *
+     * @param \Request $request
+     *
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
     {
+        // validate input and return errors in failure
         $validator = Validator::make(
             $request->all(),
             [
@@ -77,7 +85,7 @@ class UserController extends Controller
             ]
         );
         if ($validator->fails()) {
-            return response()->json(['error'=>$validator->errors()], 401);
+            return $this->respondBadRequest($validator->errors());
         }
 
         $input = $request->all();
@@ -87,16 +95,20 @@ class UserController extends Controller
         $success['first_name'] =  $user->first_name;
         $success['last_name'] =  $user->last_name;
 
-        return response()->json(['success'=>$success], $this-> successStatus);
+        return $this->respondWithData($data);
     }
 
     /**
      * Creates new user
      *
+     * @param \Request $request
+     * @param int $id user id
+     *
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, int $id)
     {
+        // validate input and return errors in failure
         $validator = Validator::make(
             $request->all(),
             [
@@ -112,15 +124,18 @@ class UserController extends Controller
             ]
         );
         if ($validator->fails()) {
-            return response()->json(['error'=>$validator->errors()], 401);
+            return $this->respondBadRequest($validator->errors());
         }
 
+        /** @var array $input all the input fields */
         $input = $request->all();
+        /** @var Model $user model of the user we have to update */
         $user = User::find($id);
         if ($user === null) {
-            return response()->json(['error' => 'Not Found'], 404);
+            return $this->respondNotFound('This user was not found.');
         }
         // Hash password if we got a new one
+        // or remove it from the $input
         if ($request->has('password') and ! Hash::check($input['password'], $user->password)) {
             $input['password'] = bcrypt($input['password']);
         } else {
@@ -128,6 +143,6 @@ class UserController extends Controller
         }
         $user->update($input);
 
-        return response()->json(['success'=>$user], $this-> successStatus);
+        return $this->respondWithData($user);
     }
 }
