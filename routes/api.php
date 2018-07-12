@@ -23,5 +23,5 @@ Route::post('login', 'Api\UserController@login')->name('login');
 
 Route::group(['middleware' => 'auth:api'], function () {
     Route::get('users/{id}', 'Api\UserController@show');
-    Route::post('users/{id}', 'Api\UserController@update');
+    Route::put('users/{id}', 'Api\UserController@update');
 });
