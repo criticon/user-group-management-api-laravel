@@ -16,7 +16,7 @@ class AddMissingFieldsToUsersTable extends Migration
         Schema::table('users', function (Blueprint $table) {
             $table->string('first_name', 100)->after('id');
             $table->string('last_name', 100)->after('first_name');
-            $table->enum('state', ['active', 'non active'])->after('last_name');
+            $table->boolean('active')->default(true)->after('last_name');
             $table->dropColumn('name');
         });
     }
@@ -29,7 +29,7 @@ class AddMissingFieldsToUsersTable extends Migration
     public function down()
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['first_name', 'last_name', 'state']);
+            $table->dropColumn(['first_name', 'last_name', 'active']);
             $table->string('name', 255)->after('id');
         });
     }

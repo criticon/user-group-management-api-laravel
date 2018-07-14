@@ -5,29 +5,50 @@ namespace App\Http\Controllers\Api;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Api\ApiController;
 use App\User;
-use Illuminate\Support\Facades\Auth;
 use Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Hash;
+use \Laravel\Passport\Client;
+use App\UserGroupManagementApp\Transformers\UserTransformer;
 
 class UserController extends ApiController
 {
     /**
+     * @var App\UserGroupManagementApp\Transformers\UserTransformer
+     */
+    protected $userTransformer;
+
+    public function __construct(UserTransformer $userTransformer)
+    {
+        $this->userTransformer = $userTransformer;
+    }
+    
+    public function getPassportClient()
+    {
+        return Client::where('password_client', 1)->first();
+    }
+
+    /**
      * Gives access token
      *
+     * @param Request $request
      * @return \Illuminate\Http\Response
      */
-    public function login()
+    public function login(Request $request)
     {
-        // Attempt to login and return access token in success
-        if (Auth::attempt(['email' => request('email'), 'password' => request('password')])) {
-            $user = Auth::user();
-            $data['token'] =  $user->createToken('MyApp')-> accessToken;
+        $client = $this->getPassportClient();
+        $request->request->add([
+            'grant_type' => 'password',
+            'username' => $request->email,
+            'password' => $request->password,
+            'client_id' => $client->id,
+            'client_secret' => $client->secret,
+            'scope' => null
+        ]);
 
-            return $this->respondWithData($data);
-        }
+        $proxy = Request::create('oauth/token', 'POST');
 
-        return $this->respondUnauthorised();
+        return \Route::dispatch($proxy);
     }
 
     /**
@@ -43,7 +64,7 @@ class UserController extends ApiController
             return $this->respondNotFound('No users found.');
         }
 
-        return $this->respondWithData($users);
+        return $this->respondWithData($this->userTransformer->transformCollection($users->all()));
     }
 
     /**
@@ -61,7 +82,7 @@ class UserController extends ApiController
             return $this->respondNotFound('This user was not found.');
         }
 
-        return $this->respondWithData($user);
+        return $this->respondWithData($this->userTransformer->transform($user));
     }
 
     /**
@@ -73,9 +94,10 @@ class UserController extends ApiController
      */
     public function store(Request $request)
     {
+        $input = $request->all();
         // validate input and return errors in failure
         $validator = Validator::make(
-            $request->all(),
+            $input,
             [
                 'first_name' => 'required',
                 'last_name' => 'required',
@@ -88,14 +110,23 @@ class UserController extends ApiController
             return $this->respondBadRequest($validator->errors());
         }
 
-        $input = $request->all();
+        // Create user with hashed password
         $input['password'] = bcrypt($input['password']);
-        $user = User::create($input);
-        $success['token'] =  $user->createToken('MyApp')-> accessToken;
-        $success['first_name'] =  $user->first_name;
-        $success['last_name'] =  $user->last_name;
+        User::create($input);
 
-        return $this->respondWithData($data);
+        $client = $this->getPassportClient();
+        $request->request->add([
+            'grant_type' => 'password',
+            'username' => $input['email'],
+            'password' => $request->password, // password shouldn't be hashed here
+            'client_id' => $client->id,
+            'client_secret' => $client->secret,
+            'scope' => null
+        ]);
+
+        $proxy = Request::create('oauth/token', 'POST');
+
+        return \Route::dispatch($proxy);
     }
 
     /**
@@ -143,6 +174,6 @@ class UserController extends ApiController
         }
         $user->update($input);
 
-        return $this->respondWithData($user);
+        return $this->respondWithData($this->userTransformer->transform($user));
     }
 }
