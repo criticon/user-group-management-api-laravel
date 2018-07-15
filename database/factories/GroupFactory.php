@@ -15,6 +15,6 @@ use Faker\Generator as Faker;
 
 $factory->define(App\Group::class, function (Faker $faker) {
     return [
-        'name' => $faker->word
+        'name' => $faker->text(50)
     ];
 });

@@ -34,11 +34,13 @@ class UserTest extends TestCase
     {
         $password = '1234';
         $user = User::updateOrCreate([
-            "first_name" => 'test',
-            "last_name" => 'test',
-            "email" => 'test@example.org',
+                "email" => 'test@example.org',
             ],
-            ["password" => bcrypt($password)]
+            [
+                "first_name" => 'test',
+                "last_name" => 'test',
+                "password" => bcrypt($password)
+            ]
         );
 
         return $user;
