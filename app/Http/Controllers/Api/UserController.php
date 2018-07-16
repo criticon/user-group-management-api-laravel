@@ -102,6 +102,7 @@ class UserController extends ApiController
                 'first_name' => 'required',
                 'last_name' => 'required',
                 'email' => 'required|email|unique:users',
+                'group_id' => 'exists:groups,id',
                 'password' => 'required',
                 'c_password' => 'required|same:password',
             ]
@@ -112,7 +113,8 @@ class UserController extends ApiController
 
         // Create user with hashed password
         $input['password'] = bcrypt($input['password']);
-        User::create($input);
+        $user = User::create($input);
+        $user->groups()->attach($input['group_id']);
 
         $client = $this->getPassportClient();
         $request->request->add([

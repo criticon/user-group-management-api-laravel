@@ -6,18 +6,14 @@ use Tests\TestCase;
 use Illuminate\Foundation\Testing\WithFaker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\User;
+use App\Group;
+use App\Traits\FeatureTestTrait;
 
 class UserTest extends TestCase
 {
 
     use WithFaker;
-
-    /**
-     * Access token from Laravel Passport
-     *
-     * @var string
-     */
-    protected $accessToken;
+    use FeatureTestTrait;
 
     public function setUp()
     {
@@ -26,38 +22,15 @@ class UserTest extends TestCase
         $this->setAccessToken($this->getTestUser());
     }
 
-    /**
-     * Creates new user and puts it's access token to this.accessToken
-     *
-     */
-    public function getTestUser()
-    {
-        $password = '1234';
-        $user = User::updateOrCreate([
-                "email" => 'test@example.org',
-            ],
-            [
-                "first_name" => 'test',
-                "last_name" => 'test',
-                "password" => bcrypt($password)
-            ]
-        );
-
-        return $user;
-    }
-
-    public function setAccessToken(User $user)
-    {
-        $this->accessToken = $user->createToken('mypassportclient')-> accessToken;
-    }
-
     public function testUserIsCreatedCorrectly()
     {
         $password = $this->faker->password();
+        $randomGroupId = Group::pluck('id')->random();
         $data = [
             "first_name" => $this->faker->firstName(),
             "last_name" => $this->faker->lastName(),
             "email" => $this->faker->safeEmail(),
+            "group_id" => $randomGroupId,
             "password" => $password,
             "c_password" => $password
         ];
