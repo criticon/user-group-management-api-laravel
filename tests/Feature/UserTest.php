@@ -52,6 +52,7 @@ class UserTest extends TestCase
             "first_name" => $firstName,
             "last_name" => $lastName,
             "email" => $email,
+            "state" => $this->faker->boolean(),
             "password" => $password,
             "c_password" => $password
         ];
