@@ -102,7 +102,7 @@ class UserController extends ApiController
                 'first_name' => 'required',
                 'last_name' => 'required',
                 'email' => 'required|email|unique:users',
-                'group_id' => 'exists:groups,id',
+                'group_id' => 'required|exists:groups,id',
                 'password' => 'required',
                 'c_password' => 'required|same:password',
             ]
