@@ -92,14 +92,14 @@ class GroupsController extends ApiController
             return $this->respondNotFound('No groups found.');
         }
 
-        // detach id's
-        if ($input['users_remove']) {
-            $group->users()->detach($input['users_remove']);
-        }
-
         // attach id's if its doesn't attached
         if ($input['users_add']) {
             $group->users()->syncWithoutDetaching($input['users_add']);
+        }
+
+        // detach id's
+        if ($input['users_remove']) {
+            $group->users()->detach($input['users_remove']);
         }
 
         return $this->respondWithData($this->groupTransformer->transform($group));
