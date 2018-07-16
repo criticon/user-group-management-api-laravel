@@ -76,9 +76,9 @@ class GroupsController extends ApiController
         $validator = Validator::make(
             $input,
             [
-                'users_add' => 'array',
+                'users_add' => 'array|min:1',
                 'users_add.*' => 'distinct|exists:users,id',
-                'users_remove' => 'array',
+                'users_remove' => 'array|min:1',
                 'users_remove.*' => 'distinct|exists:users,id',
             ]
         );
@@ -93,12 +93,12 @@ class GroupsController extends ApiController
         }
 
         // attach id's if its doesn't attached
-        if ($input['users_add']) {
+        if (isset($input['users_add'])) {
             $group->users()->syncWithoutDetaching($input['users_add']);
         }
 
         // detach id's
-        if ($input['users_remove']) {
+        if (isset($input['users_remove'])) {
             $group->users()->detach($input['users_remove']);
         }
 
