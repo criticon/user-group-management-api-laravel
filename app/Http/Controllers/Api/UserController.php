@@ -150,10 +150,7 @@ class UserController extends ApiController
                 'email' => 'filled|email|unique:users',
                 'password' => 'filled',
                 'c_password' => 'required_with:password|filled|same:password',
-                'state' => [
-                    'filled',
-                    Rule::in(['active', 'non active']),
-                ],
+                'state' => 'required|boolean',
             ]
         );
         if ($validator->fails()) {
@@ -162,6 +159,11 @@ class UserController extends ApiController
 
         /** @var array $input all the input fields */
         $input = $request->all();
+
+        // transform input
+        $input['active'] = (bool) $input['state'];
+        $input = array_except($input, ['state']);
+
         /** @var Model $user model of the user we have to update */
         $user = User::find($id);
         if ($user === null) {
