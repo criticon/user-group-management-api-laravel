@@ -88,7 +88,7 @@ class GroupTest extends TestCase
         $response = $this->json('PUT', sprintf('/api/groups/%d', $randomGroupId), $data, $headers);
         
         // determine expected user ids related to the group after update has been made
-        $afterExpectedIds = array_diff(array_merge($beforeIds, $toAddIds), $toRemoveIds);
+        $afterExpectedIds = array_diff(array_unique(array_merge($beforeIds, $toAddIds)), $toRemoveIds);
         // determine user ids that present in pivot table for the group
         $afterRealIds = Group::find($randomGroupId)->users()->pluck('users.id')->all();
         // check if changes have been made
